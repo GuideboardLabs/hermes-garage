@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Helper for local-llm: query model registry."""
+import json
+import os
+import sys
+
+MODELS_FILE = os.environ.get("LOCAL_LLM_CONFIG", os.path.expanduser("~/.config/local-llm/models.json"))
+
+def main():
+    with open(MODELS_FILE) as f:
+        data = json.load(f)
+
+    if len(sys.argv) < 2:
+        # List all models
+        for m in data["models"]:
+            print(f"{m['name']}|{m['label']}|{m['port']}|{m['service']}")
+        return
+
+    cmd = sys.argv[1]
+
+    if cmd == "get":
+        name = sys.argv[2]
+        for m in data["models"]:
+            if m["name"] == name:
+                print(json.dumps(m))
+                return
+        sys.exit(1)
+
+    if cmd == "field":
+        name = sys.argv[2]
+        field = sys.argv[3]
+        for m in data["models"]:
+            if m["name"] == name:
+                print(m[field])
+                return
+        sys.exit(1)
+
+    sys.exit(1)
+
+if __name__ == "__main__":
+    main()

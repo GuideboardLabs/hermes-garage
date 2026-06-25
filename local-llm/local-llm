@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# local-llm — manage local llama.cpp model services
+# Ensures only one model service runs at a time.
+set -euo pipefail
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/local-llm"
+ACTIVE_FILE="$CONFIG_DIR/active"
+
+die() { echo "error: $*" >&2; exit 1; }
+
+HELPER="local-llm-helper"
+
+list_models() {
+  "$HELPER"
+}
+
+get_field() {
+  local name="$1" field="$2"
+  "$HELPER" field "$name" "$field"
+}
+
+is_running() {
+  local service="$1"
+  systemctl --user is-active "$service" &>/dev/null
+}
+
+stop_all() {
+  while IFS='|' read -r _sname _slabel _sport _sservice; do
+    if is_running "$_sservice"; then
+      echo "  stopping $_slabel..."
+      systemctl --user stop "$_sservice" 2>/dev/null || true
+      sleep 1
+    fi
+  done < <(list_models)
+}
+
+start_model() {
+  local name="$1"
+  local label port service
+
+  label=$(get_field "$name" "label")
+  port=$(get_field "$name" "port")
+  service=$(get_field "$name" "service")
+
+  if is_running "$service"; then
+    echo "$label is already running on port $port"
+    echo "$name" > "$ACTIVE_FILE"
+    return 0
+  fi
+
+  # Stop everything else first
+  stop_all
+
+  echo "  starting $label on port $port..."
+  systemctl --user start "$service" 2>/dev/null || {
+    systemctl --user enable "$service" 2>/dev/null || true
+    systemctl --user start "$service" 2>/dev/null
+  }
+
+  # Wait for it to be ready
+  local waited=0
+  while [ $waited -lt 15 ]; do
+    if systemctl --user is-active "$service" &>/dev/null; then
+      if ss -tlnp 2>/dev/null | grep -q ":$port "; then
+        echo "  $label is ready on port $port"
+        echo "$name" > "$ACTIVE_FILE"
+        return 0
+      fi
+    fi
+    sleep 1
+    waited=$((waited + 1))
+  done
+
+  echo "  warning: $label may not be ready yet — check 'systemctl --user status $service'"
+  echo "$name" > "$ACTIVE_FILE"
+}
+
+# --- commands ---
+
+cmd_status() {
+  local active=""
+  [ -f "$ACTIVE_FILE" ] && active=$(cat "$ACTIVE_FILE")
+
+  echo "=== Local LLM Models ==="
+  echo ""
+
+  while IFS='|' read -r _sname _slabel _sport _sservice; do
+    local marker=" "
+    local status_text="stopped"
+    if is_running "$_sservice"; then
+      marker="▶"
+      status_text="running (port $_sport)"
+    fi
+    if [ "$_sname" = "$active" ]; then
+      marker="●"
+    fi
+    printf " %s %-18s %-40s %s\n" "$marker" "$_sname" "$_slabel" "$status_text"
+  done < <(list_models)
+
+  echo ""
+  echo "● = active  ▶ = running"
+  echo ""
+  echo "Usage: local-llm switch    — pick a model interactively"
+  echo "       local-llm status    — show this"
+  echo "       local-llm stop      — stop the current model"
+  echo "       local-llm <name>    — switch to a specific model"
+}
+
+cmd_switch() {
+  echo "Available models:"
+  echo ""
+
+  local i=0
+  local names=()
+  while IFS='|' read -r _sname _slabel _sport _sservice; do
+    i=$((i + 1))
+    names+=("$_sname")
+    local status=""
+    if is_running "$_sservice"; then
+      status=" [running]"
+    fi
+    printf "  %d. %-18s %s%s\n" "$i" "$_sname" "$_slabel" "$status"
+  done < <(list_models)
+
+  echo ""
+  read -r -p "Select model [1-$i]: " choice
+
+  if ! [[ "$choice" =~ ^[0-9]+$ ]] || [ "$choice" -lt 1 ] || [ "$choice" -gt "$i" ]; then
+    die "invalid selection"
+  fi
+
+  local selected="${names[$((choice - 1))]}"
+  echo ""
+  echo "Switching to $selected..."
+  start_model "$selected"
+}
+
+cmd_stop() {
+  local found=false
+  while IFS='|' read -r _sname _slabel _sport _sservice; do
+    if is_running "$_sservice"; then
+      echo "  stopping $_slabel..."
+      systemctl --user stop "$_sservice" 2>/dev/null || true
+      found=true
+    fi
+  done < <(list_models)
+
+  rm -f "$ACTIVE_FILE"
+
+  if $found; then
+    echo "All models stopped."
+  else
+    echo "No models running."
+  fi
+}
+
+# --- main ---
+
+case "${1:-status}" in
+  status)
+    cmd_status
+    ;;
+  switch|select|pick)
+    cmd_switch
+    ;;
+  stop|off|down)
+    cmd_stop
+    ;;
+  -h|--help|help)
+    echo "Usage: local-llm [command]"
+    echo ""
+    echo "Commands:"
+    echo "  status              Show model status (default)"
+    echo "  switch              Pick a model interactively"
+    echo "  stop                Stop all models"
+    echo "  <model-name>        Switch to a specific model"
+    echo ""
+    echo "Examples:"
+    echo "  local-llm                          # show status"
+    echo "  local-llm switch                   # pick from list"
+    echo "  local-llm ornith-1.0-9b           # switch to Ornith"
+    echo "  local-llm qwen3.5-9b              # switch to Qwen"
+    echo "  local-llm stop                     # stop everything"
+    ;;
+  *)
+    # Try as a model name
+    if list_models | grep -q "^${1}|"; then
+      echo "Switching to $1..."
+      start_model "$1"
+    else
+      die "unknown command or model: $1"
+    fi
+    ;;
+esac
