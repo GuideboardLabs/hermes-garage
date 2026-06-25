@@ -12,7 +12,7 @@
     {
       "name": "Session Export to Vault",
       "description": "Export recent Hermes sessions as markdown notes in your vault. Runs every 60 minutes, no agent needed.",
-      "script": "hermes-session-export.py",
+      "script": "session-export/sub-agents/hermes-session-export.py",
       "no_agent": true,
       "schedule": "every 60m",
       "deliver": "local",
@@ -21,7 +21,7 @@
     {
       "name": "Vault Inbox Triage",
       "description": "Compress raw exports, age out stale inbox items, warn when inbox exceeds threshold. Runs every 15 minutes, no agent needed.",
-      "script": "vault-inbox-triage.sh",
+      "script": "inbox-triage/sub-agents/vault-inbox-triage.sh",
       "no_agent": true,
       "schedule": "every 15m",
       "deliver": "local",
@@ -30,7 +30,7 @@
     {
       "name": "Hackysack Ideation",
       "description": "Reads research + vault walks, applies a random creative constraint, generates 3 ranked ideas, writes them to the vault. Runs twice daily.",
-      "script": "hackysack.py",
+      "script": "hackysack/sub-agents/hackysack.py",
       "no_agent": true,
       "schedule": "0 6,18 * * *",
       "deliver": "local",
@@ -39,7 +39,7 @@
     {
       "name": "Custodian Wander Walk",
       "description": "Optional: wanders your vault picking contrasting folder pairs, reads random notes, writes structured discoveries. Requires custodian.py and a running LLM server.",
-      "script": "custodian-wander.sh",
+      "script": "custodian/jobs/custodian-wander.sh",
       "no_agent": true,
       "schedule": "every 60m",
       "deliver": "local",
@@ -48,7 +48,7 @@
     {
       "name": "Custodian Lint Walk",
       "description": "Optional: daily vault health check — broken links, orphan notes, stale metadata. Requires custodian.py.",
-      "script": "custodian-lint.sh",
+      "script": "custodian/jobs/custodian-lint.sh",
       "no_agent": true,
       "schedule": "0 6 * * *",
       "deliver": "local",
@@ -57,7 +57,7 @@
     {
       "name": "Custodian Drift Walk",
       "description": "Optional: detects drift between related notes — contradictions, outdated references, stale cross-links. Requires custodian.py and a running LLM server.",
-      "script": "custodian-drift.sh",
+      "script": "custodian/jobs/custodian-drift.sh",
       "no_agent": true,
       "schedule": "every 30m",
       "deliver": "local",
