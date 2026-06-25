@@ -76,7 +76,7 @@ EXCLUDED_PREFIXES = [
     "0-Inbox/hermes-sessions/",
     "0-Inbox/Codex Sessions",
     "0-Inbox/custodian/",
-    "0-Inbox/nanny/",
+    "0-Inbox/personal/",
     "hermes-memories/",
     ".obsidian/",
     ".hermes/",

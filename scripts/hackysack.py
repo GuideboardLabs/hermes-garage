@@ -2,7 +2,7 @@
 """
 Hackysack — Creative ideation jam agent.
 
-Reads Custodian walks + Mr. Scan research, runs 4 persona agents through
+Reads vault research + custodian walks, runs 4 persona agents through
 the local LLM, and produces ranked project ideas. Head Hackysacker
 synthesizes the best 3.
 
@@ -139,9 +139,9 @@ def load_custodian_walks(max_files=MAX_WALKS):
         walks.append({"file": str(f.relative_to(VAULT_ROOT)), "content": f.read_text()[:2000]})
     return walks
 
-def load_mr_scan_research(max_files=MAX_RESEARCH):
-    """Load the most recent Mr. Scan research findings."""
-    research_dir = VAULT_ROOT / "0-Inbox" / "mr-scan" / "research"
+def load_research_findings(max_files=MAX_RESEARCH):
+    """Load the most recent research findings from the vault."""
+    research_dir = VAULT_ROOT / "0-Inbox" / "research"
     if not research_dir.exists():
         return []
     # Collect all .md files from all subdirs
@@ -205,7 +205,7 @@ Now synthesize. Pick the best 3 ideas overall. For each, give:
 5. **Which persona championed it** (Architect, Builder, Marketer, or Critic)
 6. **Why it won** (1 sentence)
 
-Also identify: is there one idea that is fully automatable — something Hackysack could build and ship without Seth touching it? If so, highlight it with ⚡.
+Also identify: is there one idea that is fully automatable — something Hackysack could build and ship without human touching it? If so, highlight it with ⚡.
 
 Rank them: 🥇, 🥈, 🥉.
 
@@ -264,8 +264,8 @@ def main():
 
     # 1. Load corpus
     walks = load_custodian_walks()
-    research = load_mr_scan_research()
-    log(f"Loaded {len(walks)} Custodian walks, {len(research)} Mr. Scan findings")
+    research = load_research_findings()
+    log(f"Loaded {len(walks)} Custodian walks, {len(research)} research findings")
 
     if not walks and not research:
         log("No corpus found. Nothing to jam on.")
@@ -279,7 +279,7 @@ def main():
         corpus_parts.append(f"[Custodian Walk: {w['file']}]\n{w['content']}")
     for r in research:
         corpus_sources.append(r["file"])
-        corpus_parts.append(f"[Mr. Scan Research: {r['file']}]\n{r['content']}")
+        corpus_parts.append(f"[Research: {r['file']}]\n{r['content']}")
     corpus_text = "\n\n".join(corpus_parts)
 
     # 3. Pick constraint
