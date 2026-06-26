@@ -154,11 +154,25 @@ cmd_stop() {
   fi
 }
 
+cmd_active() {
+  local result
+  result=$("$HELPER" active 2>/dev/null || true)
+  if [ -z "$result" ]; then
+    echo "No active model. Use 'local-llm switch' or 'local-llm <name>' to set one."
+    return 1
+  fi
+  IFS='|' read -r _aname _aport _aservice <<< "$result"
+  echo "$_aname (port $_aport, service $_aservice)"
+}
+
 # --- main ---
 
 case "${1:-status}" in
   status)
     cmd_status
+    ;;
+  active)
+    cmd_active
     ;;
   switch|select|pick)
     cmd_switch
@@ -171,6 +185,7 @@ case "${1:-status}" in
     echo ""
     echo "Commands:"
     echo "  status              Show model status (default)"
+    echo "  active              Show active model name and port"
     echo "  switch              Pick a model interactively"
     echo "  stop                Stop all models"
     echo "  <model-name>        Switch to a specific model"

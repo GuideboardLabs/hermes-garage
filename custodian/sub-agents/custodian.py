@@ -35,14 +35,36 @@ import zoneinfo
 _NYTZ = zoneinfo.ZoneInfo("America/New_York")
 from pathlib import Path
 
-# ── Config (INI overrides, then env vars, then defaults) ───────────
+# ── Config (INI overrides, then env vars, then active model, then defaults) ──
 
 CONFIG_PATH = Path(__file__).with_suffix(".ini")
-_config = {
-    "LLAMA_URL": "http://127.0.0.1:8093",
-    "LLAMA_MODEL": "qwen3.5-9b",
+LOCAL_LLM_CONFIG = Path.home() / ".config" / "local-llm"
+ACTIVE_FILE = LOCAL_LLM_CONFIG / "active"
+MODELS_FILE = LOCAL_LLM_CONFIG / "models.json"
+
+def _resolve_active_model():
+    """Read the active model from local-llm's state. Returns (url, model_name) or None."""
+    if not ACTIVE_FILE.exists() or not MODELS_FILE.exists():
+        return None
+    try:
+        active_name = ACTIVE_FILE.read_text().strip()
+        models = json.loads(MODELS_FILE.read_text())
+        for m in models.get("models", []):
+            if m["name"] == active_name:
+                port = m.get("port", 8093)
+                return (f"http://127.0.0.1:{port}", m["name"])
+    except (json.JSONDecodeError, KeyError, OSError):
+        pass
+    return None
+
+_active = _resolve_active_model()
+_defaults = {
+    "LLAMA_URL": _active[0] if _active else "http://127.0.0.1:8093",
+    "LLAMA_MODEL": _active[1] if _active else "qwen3.5-9b",
     "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")),
 }
+
+_config = dict(_defaults)
 if CONFIG_PATH.exists():
     ini = configparser.ConfigParser()
     ini.read(str(CONFIG_PATH))
@@ -51,7 +73,7 @@ if CONFIG_PATH.exists():
             if ini.has_option("custodian", key):
                 _config[key] = ini.get("custodian", key)
 
-# Env vars win over INI
+# Env vars win over everything
 for key in _config:
     _config[key] = os.environ.get(key, _config[key])
 

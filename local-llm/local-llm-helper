@@ -35,6 +35,18 @@ def main():
                 return
         sys.exit(1)
 
+    if cmd == "active":
+        active_file = os.path.expanduser("~/.config/local-llm/active")
+        if not os.path.exists(active_file):
+            sys.exit(1)
+        with open(active_file) as f:
+            name = f.read().strip()
+        for m in data["models"]:
+            if m["name"] == name:
+                print(f"{m['name']}|{m['port']}|{m['service']}")
+                return
+        sys.exit(1)
+
     sys.exit(1)
 
 if __name__ == "__main__":
