@@ -15,7 +15,7 @@
 
 set -euo pipefail
 
-VAULT="${OBSIDIAN_VAULT_PATH:-$HOME/.second-brain}"
+VAULT="${OBSIDIAN_VAULT_PATH:-$HOME/my-vault}"
 ARCHIVE="${VAULT_ARCHIVE_PATH:-$HOME/.hermes/vault-archive}"
 LOG="$ARCHIVE/triage.log"
 PROCESS_LOG="$VAULT/0-Inbox/.process-log.md"

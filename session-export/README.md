@@ -7,12 +7,11 @@ Exports recent Hermes sessions as structured markdown notes in your vault. Prese
 | Path | What |
 |------|------|
 | `sub-agents/hermes-session-export.py` | The export agent |
-| `jobs/` | Shell wrappers for cron scheduling (coming) |
 
 ## Setup
 
 ```bash
-export VAULT_ROOT="$HOME/.second-brain"
+export VAULT_ROOT="$HOME/my-vault"
 export HERMES_STATE_DB="$HOME/.hermes/state.db"
 
 python3 sub-agents/hermes-session-export.py

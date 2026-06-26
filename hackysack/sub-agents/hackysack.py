@@ -81,7 +81,7 @@ _defaults = {
     "CLOUD_URL": _cloud[0] if _cloud else "https://ollama.com/v1",
     "CLOUD_MODEL": _cloud[1] if _cloud else "qwen3.5:397b",
     "CLOUD_API_KEY": _cloud[2] if _cloud else "",
-    "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")),
+    "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / "my-vault")),
     "MAX_WALKS": "5",
     "MAX_RESEARCH": "5",
 }
@@ -139,7 +139,7 @@ CONSTRAINTS = [
 PERSONAS = {
     "Architect": {
         "lens": "feasibility and architecture fit",
-        "system": "You are an Architect. You evaluate ideas for technical feasibility, architecture fit with existing projects (OverCR, Cammander, Oathweaver), and whether they compose well with the current stack. Be specific about what would need to change.",
+        "system": "You are an Architect. You evaluate ideas for technical feasibility, architecture fit with the user's existing projects, and whether they compose well with the current stack. Be specific about what would need to change.",
     },
     "Builder": {
         "lens": "effort and buildability",

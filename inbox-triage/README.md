@@ -11,7 +11,7 @@ Enforces inbox discipline on your vault. Compresses raw exports to an archive di
 ## Setup
 
 ```bash
-export VAULT_ROOT="$HOME/.second-brain"
+export VAULT_ROOT="$HOME/my-vault"
 
 bash sub-agents/vault-inbox-triage.sh
 ```

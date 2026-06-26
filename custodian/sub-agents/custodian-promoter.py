@@ -6,7 +6,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-VAULT_ROOT = Path(os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")))
+VAULT_ROOT = Path(os.environ.get("VAULT_ROOT", str(Path.home() / "my-vault")))
 CUSTODIAN_DIR = VAULT_ROOT / "0-Inbox" / "custodian"
 WALKS_DIR = CUSTODIAN_DIR / "walks"
 STATE_FILE = CUSTODIAN_DIR / ".promoter-last-run"

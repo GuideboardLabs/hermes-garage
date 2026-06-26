@@ -16,7 +16,7 @@ _NYTZ = zoneinfo.ZoneInfo("America/New_York")
 from pathlib import Path
 
 HERMES_DB = Path(os.environ.get("HERMES_STATE_DB", str(Path.home() / ".hermes" / "state.db")))
-VAULT_DIR = Path(os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")))
+VAULT_DIR = Path(os.environ.get("VAULT_ROOT", str(Path.home() / "my-vault")))
 OUTPUT_DIR = VAULT_DIR / '0-Inbox' / 'hermes-sessions'
 STATE_FILE = Path.home() / '.hermes' / 'session-export-state.json'
 

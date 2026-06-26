@@ -2,6 +2,8 @@
 
 A background agent that wanders your knowledge vault, picking contrasting folder pairs, reading random notes, and writing structured discoveries. Detects echoes (related ideas across domains), gaps (missing connections), and drift (contradictions or stale references).
 
+**This component is optional.** You don't need Custodian to use the rest of North Mini Code. Skip it if you don't have a vault wanderer setup.
+
 ## Files
 
 | Path | What |
@@ -41,3 +43,7 @@ hermes cron create --schedule "0 6 * * *" \
   --script custodian/jobs/custodian-lint.sh \
   --no-agent --deliver local
 ```
+
+## Customization
+
+Edit `config/custodian.ini` to set your LLM endpoint and model. The `WANDER_PAIRS` list in `custodian.py` defines which folder pairs to compare — edit it to match your vault structure.

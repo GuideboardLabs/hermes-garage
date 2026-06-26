@@ -41,7 +41,7 @@ The pipeline:
 ### Environment variables
 
 ```bash
-export VAULT_ROOT="$HOME/.second-brain"    # Your markdown vault
+export VAULT_ROOT="$HOME/my-vault"    # Your markdown vault
 export LLAMA_URL="http://127.0.0.1:8093"   # Your LLM server
 export LLAMA_MODEL="qwen3.5-9b"            # Model name
 ```

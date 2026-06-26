@@ -1,5 +1,5 @@
 {
-  "description": "Reference cron job configurations for Hermes Garage agents.",
+  "description": "Reference cron job configurations for North Mini Code agents.",
   "note": "Replace paths, schedules, and delivery targets with your own. These are examples — adapt freely.",
   "env_vars": {
     "VAULT_ROOT": "/path/to/your/vault",

@@ -17,7 +17,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from collections import Counter
 
-VAULT_ROOT = Path(os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")))
+VAULT_ROOT = Path(os.environ.get("VAULT_ROOT", str(Path.home() / "my-vault")))
 HACKY_DIR = VAULT_ROOT / "0-Inbox" / "hackysack"
 PROJECTS_DIR = VAULT_ROOT / "1-Projects"
 RESEARCH_DIR = VAULT_ROOT / "5-Research"

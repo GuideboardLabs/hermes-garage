@@ -96,7 +96,7 @@ _defaults = {
     "CLOUD_URL": _cloud[0] if _cloud else "https://ollama.com/v1",
     "CLOUD_MODEL": _cloud[1] if _cloud else "qwen3.5:397b",
     "CLOUD_API_KEY": _cloud[2] if _cloud else "",
-    "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")),
+    "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / "my-vault")),
 }
 
 _config = dict(_defaults)
