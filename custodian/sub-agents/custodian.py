@@ -58,9 +58,44 @@ def _resolve_active_model():
     return None
 
 _active = _resolve_active_model()
+
+def _resolve_cloud_config():
+    """Read Ollama Cloud credentials from Hermes auth.json. Returns (url, model, api_key) or None."""
+    auth_path = Path.home() / ".hermes" / "auth.json"
+    if not auth_path.exists():
+        return None
+    try:
+        auth = json.loads(auth_path.read_text())
+        pool = auth.get("credential_pool", {}).get("ollama-cloud", [])
+        if not pool:
+            return None
+        cred = pool[0]
+        base_url = cred.get("base_url", "https://ollama.com/v1")
+
+        # Try env var first, then ~/.hermes/.env (cron jobs don't inherit env)
+        api_key = os.environ.get("OLLAMA_API_KEY", "")
+        if not api_key:
+            env_path = Path.home() / ".hermes" / ".env"
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    line = line.strip()
+                    if line.startswith("OLLAMA_API_KEY=") and "***" not in line and "your" not in line.lower():
+                        api_key = line.split("=", 1)[1]
+                        break
+
+        if not api_key:
+            return None
+        return (base_url, "qwen3.5:397b", api_key)
+    except (json.JSONDecodeError, KeyError, OSError):
+        return None
+
+_cloud = _resolve_cloud_config()
 _defaults = {
     "LLAMA_URL": _active[0] if _active else "http://127.0.0.1:8093",
     "LLAMA_MODEL": _active[1] if _active else "qwen3.5-9b",
+    "CLOUD_URL": _cloud[0] if _cloud else "https://ollama.com/v1",
+    "CLOUD_MODEL": _cloud[1] if _cloud else "qwen3.5:397b",
+    "CLOUD_API_KEY": _cloud[2] if _cloud else "",
     "VAULT_ROOT": os.environ.get("VAULT_ROOT", str(Path.home() / ".second-brain")),
 }
 
@@ -79,6 +114,9 @@ for key in _config:
 
 LLAMA_URL = _config["LLAMA_URL"]
 LLAMA_MODEL = _config["LLAMA_MODEL"]
+CLOUD_URL = _config.get("CLOUD_URL", "")
+CLOUD_MODEL = _config.get("CLOUD_MODEL", "")
+CLOUD_API_KEY = _config.get("CLOUD_API_KEY", "")
 VAULT_ROOT = Path(_config["VAULT_ROOT"])
 CUSTODIAN_DIR = VAULT_ROOT / "0-Inbox" / "custodian"
 WALKS_DIR = CUSTODIAN_DIR / "walks"
@@ -126,7 +164,7 @@ def is_excluded(rel_path):
     return False
 
 def llama_chat(text, system=None, max_tokens=1024, temperature=0.7):
-    """Send a single-turn prompt to the local llama.cpp server."""
+    """Send a single-turn prompt. Tries local LLM first, falls back to cloud."""
     messages = [{"role": "user", "content": text}]
     if system:
         messages.insert(0, {"role": "system", "content": system})
@@ -139,6 +177,7 @@ def llama_chat(text, system=None, max_tokens=1024, temperature=0.7):
         "stream": False,
     }
 
+    # Try local first
     req = urllib.request.Request(
         f"{LLAMA_URL}/v1/chat/completions",
         data=json.dumps(body).encode(),
@@ -146,15 +185,45 @@ def llama_chat(text, system=None, max_tokens=1024, temperature=0.7):
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=180) as resp:
+        with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read())
             raw = data["choices"][0]["message"].get("content", "")
             cleaned = re.sub(r"^thinking\s*\n", "", raw.strip(), flags=re.IGNORECASE)
             cleaned = re.sub(r"^(We have|The user|I need|We need).*?\n", "", cleaned)
             return cleaned
     except Exception as e:
-        log(f"llama_chat error: {e}")
-        return None
+        log(f"Local LLM failed: {e}")
+
+    # Fall back to cloud if configured
+    if CLOUD_API_KEY:
+        log("Falling back to Ollama Cloud...")
+        cloud_body = {
+            "model": CLOUD_MODEL,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "stream": False,
+        }
+        cloud_req = urllib.request.Request(
+            f"{CLOUD_URL}/chat/completions",
+            data=json.dumps(cloud_body).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {CLOUD_API_KEY}",
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(cloud_req, timeout=120) as resp:
+                data = json.loads(resp.read())
+                raw = data["choices"][0]["message"].get("content", "")
+                cleaned = re.sub(r"^thinking\s*\n", "", raw.strip(), flags=re.IGNORECASE)
+                cleaned = re.sub(r"^(We have|The user|I need|We need).*?\n", "", cleaned)
+                return cleaned
+        except Exception as e:
+            log(f"Cloud fallback also failed: {e}")
+
+    return None
 
 def collect_real_notes():
     """Collect all vault notes, excluding raw exports, runtime state, and boilerplate."""
