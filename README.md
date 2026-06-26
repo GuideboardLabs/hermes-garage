@@ -1,6 +1,6 @@
-# North Mini Code 🧠🔧
+# Hermes Garage
 
-A collection of Hermes Agent tools, sub-agents, cron jobs, and bridge scripts for building persistent cognitive systems. Named after [Cohere's open-source coding model](https://x.com/cohere/status/2064378058329526556) — small, efficient, built for agentic performance.
+A collection of scanfi's Hermes Agent tools, sub-agents, cron jobs, and bridge scripts for building persistent cognitive systems.
 
 ## Philosophy
 
